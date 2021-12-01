@@ -39,25 +39,8 @@ public class Dominoes : MonoBehaviour
     {
         if (startGame) 
         {
-            if (piecesInPlayerHand.Count == 0)
-            {
-                print("Player Ganhou!");
-                gameOver = true;
-                UnityEditor.EditorApplication.isPlaying = false;
-            }
-
-            if (piecesInOpponentHand.Count == 0)
-            {
-                print("IA Ganhou!");
-                gameOver = true;
-                UnityEditor.EditorApplication.isPlaying = false;
-            }
-
-            if(gameOver == true && piecesInOpponentHand.Count > 0 && piecesInPlayerHand.Count > 0)
-            {
-                print("Empate seus bucha");
-                UnityEditor.EditorApplication.isPlaying = false;
-            }
+            if (IsTerminal())
+                SetGameOver();
 
             txtPiecesLeftToBuy.text = piecesInGame.Count.ToString();
         }
@@ -352,17 +335,26 @@ public class Dominoes : MonoBehaviour
 
         if (childs > 1)
         {
-            leftPiece = CheckPossiblePlay(new PieceModel { sideA = piecesInGame[0].GetComponent<PieceValue>().sideA, sideB = piecesInGame[0].GetComponent<PieceValue>().sideB },
-                                  new PieceModel { sideA = piecesInGame[1].GetComponent<PieceValue>().sideA, sideB = piecesInGame[1].GetComponent<PieceValue>().sideB });
+            leftPiece = CheckPossiblePlay(
+                new PieceModel { 
+                    sideA = piecesInGame[0].GetComponent<PieceValue>().sideA, 
+                    sideB = piecesInGame[0].GetComponent<PieceValue>().sideB },
+                new PieceModel { 
+                    sideA = piecesInGame[1].GetComponent<PieceValue>().sideA, 
+                    sideB = piecesInGame[1].GetComponent<PieceValue>().sideB });
 
-            rightPiece = CheckPossiblePlay(new PieceModel { sideA = piecesInGame[piecesInGame.Count - 1].GetComponent<PieceValue>().sideA, sideB = piecesInGame[piecesInGame.Count - 1].GetComponent<PieceValue>().sideB },
-                          new PieceModel { sideA = piecesInGame[piecesInGame.Count - 2].GetComponent<PieceValue>().sideA, sideB = piecesInGame[piecesInGame.Count - 2].GetComponent<PieceValue>().sideB });
+            rightPiece = CheckPossiblePlay(
+                new PieceModel { 
+                    sideA = piecesInGame[piecesInGame.Count - 1].GetComponent<PieceValue>().sideA, 
+                    sideB = piecesInGame[piecesInGame.Count - 1].GetComponent<PieceValue>().sideB },
+                new PieceModel { 
+                    sideA = piecesInGame[piecesInGame.Count - 2].GetComponent<PieceValue>().sideA, 
+                    sideB = piecesInGame[piecesInGame.Count - 2].GetComponent<PieceValue>().sideB });
         }
 
         if(childs == 1)
         {
             leftPiece = piecesInGame[0].GetComponent<PieceValue>().sideA;
-
             rightPiece = piecesInGame[0].GetComponent<PieceValue>().sideB;
         }
 
@@ -406,5 +398,73 @@ public class Dominoes : MonoBehaviour
         OpponentCheck(false);
     }
 
+    public bool IsTerminal()
+    {
+        var playerWinns = piecesInPlayerHand.Count == 0;
+        var computerWinns = piecesInOpponentHand.Count == 0;
+        var drawGame = gameOver == true && piecesInOpponentHand.Count > 0 && piecesInPlayerHand.Count > 0;
+        return playerWinns || computerWinns || drawGame;
+    }
 
+    private void SetGameOver()
+    {
+        if (piecesInPlayerHand.Count == 0)
+        {
+            print("Player Ganhou!");
+            gameOver = true;
+            UnityEditor.EditorApplication.isPlaying = false;
+        }
+
+        if (piecesInOpponentHand.Count == 0)
+        {
+            print("IA Ganhou!");
+            gameOver = true;
+            UnityEditor.EditorApplication.isPlaying = false;
+        }
+
+        if (gameOver == true && piecesInOpponentHand.Count > 0 && piecesInPlayerHand.Count > 0)
+        {
+            print("Empate seus bucha");
+            UnityEditor.EditorApplication.isPlaying = false;
+        }
+    }
+
+    #region Fluxo Minimax
+
+    private void Minimax()
+    {
+
+    }
+
+    private void Minimazing()
+    {
+
+    }
+
+    private void Naxmazing()
+    {
+
+    }
+
+    /// <summary>
+    /// Função linear com pesos: F= w.A + w.B ...
+    /// chamada para dar nota para estados. Probabilidade de vencer a partir deste estado.
+    /// </summary>
+    /// <returns></returns>
+    private int FuncaoAvaliacao()
+    {
+
+        return 10;
+    }
+
+    /// <summary>
+    /// Dá valor numérico aos estados terminais. 
+    /// </summary>
+    /// <returns></returns>
+    private int FuncaoUtilidade()
+    {
+        return 10;
+    }
+
+    #endregion
 }
