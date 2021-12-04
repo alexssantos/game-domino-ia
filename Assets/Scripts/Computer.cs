@@ -15,8 +15,22 @@ namespace Assets.Scripts
             _algoritmo = algoritmo.ToUpper();
         }
 
-        public PieceModel Jogar()
+        /// <summary>
+        /// Recebe o Estado do jogo no turno atual: dados de peças na mão e na mesa.
+        /// </summary>
+        /// <returns>Retorna a melhor peça a ser jogada</returns>
+        public PieceModel ObterMelhorJogada(List<PieceModel> pecasPossiveis, List<PieceModel> pecasNaMesa, int qtddAdversario, int qtddComprar)
         {
+            //Peças na minha mão
+            //Peças no tabuleiro
+            //Qtdd de peças para comprar
+            //Qtdd de peças do Adversario
+
+            for (int i = 0; i < pecasPossiveis.Count; i++)
+            {
+
+            }
+
             return null;
         }
 

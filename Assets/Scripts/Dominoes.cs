@@ -1,5 +1,9 @@
+using Assets.Scripts;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -33,6 +37,8 @@ public class Dominoes : MonoBehaviour
 
     public Text txtPiecesLeftToBuy;
 
+    private Computer _opponentIA;
+
         
     private void Update()
     {
@@ -64,6 +70,8 @@ public class Dominoes : MonoBehaviour
     public void StartGame()
     {
         piecesInGame.AddRange(pieces);
+        _opponentIA = new Computer("MINIMAX");
+
         DistributePieces();
         CheckFirstPlayer();
         startGame = true;
@@ -128,57 +136,81 @@ public class Dominoes : MonoBehaviour
 
     private void OpponentCheck(bool isFirstPlay)
     {
+        //Thread.Sleep(2*1000); //Computador aguarda 2s para jogar
+
         if (isFirstPlay)
         {
             OppnentPlay(90, pieceSelected, false);
             return;
         }
 
-        if (PlayFirstPossiblePeaceOppnent())
+        //TODO: OBTER MOVIMENTO IA
+        var pieceToPlay = GetAllPossiblePiece(piecesInOpponentHand).FirstOrDefault();
+        var possiblePieces = GetAllPossiblePiece(piecesInOpponentHand);
+        //var pieceToPlay = _opponentIA.ObterMelhorJogada(possiblePieces);
+        if (pieceToPlay != default)
+        {
+            var (rotaion, tableSide, pieaceMatch) = GetRotationAndTableSideForPieace(pieceToPlay);
+            OppnentPlay(rotaion, pieceToPlay, tableSide);
             return;
+        }
 
         if (!gameOver)
         {
             BuyPieces(piecesInOpponentHand, hidePiece, opponentHand, true);
             OpponentCheck(false);
         }
-
     }
 
-    public bool PlayFirstPossiblePeaceOppnent()
+    public PieceModel GetFirstPossiblePieceOppnent()
     {
         //varre as peças e pega a primeira válida.
         for (int i = 0; i < piecesInOpponentHand.Count; i++)
         {
-            //Esquerda
-            if (piecesInOpponentHand[i].sideA == leftPiece)
-            {
-                OppnentPlay(-90, piecesInOpponentHand[i], true);
-                return true;
-            }
-            else if (piecesInOpponentHand[i].sideB == leftPiece)
-            {
-                OppnentPlay(90, piecesInOpponentHand[i], true);
-                return true;
-            }
-
-            //Direita
-            if (piecesInOpponentHand[i].sideA == rightPiece)
-            {
-                OppnentPlay(90, piecesInOpponentHand[i], false);
-                return true;
-            }
-            else if (piecesInOpponentHand[i].sideB == rightPiece)
-            {
-                OppnentPlay(-90, piecesInOpponentHand[i], false);
-                return true;
-            }
+            var ixPiece = piecesInOpponentHand[i];
+            if (CheckCanPlayPiece(ixPiece))
+                return ixPiece;
         }
-        return false;
+        return default;
     }
 
-    
-    private void OppnentPlay(float rot, PieceModel pieceModel, bool isLeft)
+    public List<PieceModel> GetAllPossiblePiece(List<PieceModel> pieces)
+    {   
+        return pieces
+            .Where(piece => CheckCanPlayPiece(piece))
+            .ToList();
+    }
+
+    private (int, bool, bool) GetRotationAndTableSideForPieace(PieceModel pieceModel)
+    {
+        var pieceMatch = CheckCanPlayPiece(pieceModel);        
+
+        if (pieceModel.sideA == leftPiece)
+            return (-90, true, pieceMatch);
+        else if (pieceModel.sideB == leftPiece)
+            return (90, true, pieceMatch);
+
+        //Jogar a Direita na mesa
+        if (pieceModel.sideA == rightPiece)
+            return (90, false, pieceMatch);
+        else if (pieceModel.sideB == rightPiece)
+            return (-90,  false, pieceMatch);
+
+        return default;
+    }
+
+    private bool CheckCanPlayPiece(PieceModel pieceModel)
+    {
+        var pieceMatch = 
+            pieceModel.sideA == leftPiece
+            || pieceModel.sideB == leftPiece
+            || pieceModel.sideA == rightPiece
+            || pieceModel.sideB == rightPiece;            
+        
+        return pieceMatch;
+    }
+        
+    private void OppnentPlay(float rotation, PieceModel pieceModel, bool isLeft)
     {
         pieceSelected = pieceModel;
 
@@ -193,7 +225,7 @@ public class Dominoes : MonoBehaviour
             pieceSelected.pieceObject.transform.SetAsLastSibling();
         }
 
-        pieceSelected.pieceObject.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0, 0, rot);
+        pieceSelected.pieceObject.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0, 0, rotation);
         piecesInOpponentHand.Remove(pieceSelected);
         PlayerTurn(true);
     }
