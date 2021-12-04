@@ -315,12 +315,12 @@ public class Dominoes : MonoBehaviour
         {
             int GetSideAOfPieceInGame(int index, bool invertOrder = false)
             {
-                var ix = (invertOrder) ? (piecesInGame.Count - index) : index;
+                var ix = (invertOrder) ? (piecesInGame.Count - 1 - index) : index;
                 return piecesInGame[ix].GetComponent<PieceValue>().sideA;
             }
             int GetSideBOfPieceInGame(int index, bool invertOrder = false)
             {
-                var ix = (invertOrder) ? (piecesInGame.Count - index) : index;
+                var ix = (invertOrder) ? (piecesInGame.Count - 1 - index) : index;
                 return piecesInGame[ix].GetComponent<PieceValue>().sideB;
             }
 
