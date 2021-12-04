@@ -33,8 +33,7 @@ public class Dominoes : MonoBehaviour
 
     public Text txtPiecesLeftToBuy;
 
-
-    //TODO: O que esse metodo faz ? 
+        
     private void Update()
     {
         if (startGame) 
@@ -46,7 +45,22 @@ public class Dominoes : MonoBehaviour
         }
     }
 
-    //É chamado lá no botão de jogar
+
+    #region Botoes UI Methods
+
+    /// <summary>
+    /// Botão COMPRAR
+    /// </summary>
+    public void Buy()
+    {
+        BuyPieces(piecesInPlayerHand, piece, playerHand, false);
+        PlayerTurn(true);
+    }
+
+
+    /// <summary>
+    ///  Botão de JOGAR
+    /// </summary>
     public void StartGame()
     {
         piecesInGame.AddRange(pieces);
@@ -55,6 +69,9 @@ public class Dominoes : MonoBehaviour
         startGame = true;
     }
 
+    #endregion
+
+    #region Setup Game
     public void DistributePieces()
     {
         AddPieceToHand(piecesInGame, piece, piecesInPlayerHand, playerHand, false);
@@ -105,37 +122,9 @@ public class Dominoes : MonoBehaviour
         PlayerTurn(true);
     }
 
-    private PieceModel CheckGreatestDoubletes(List<PieceModel> listPieces)
-    {
-        PieceModel greatestDoublet = new PieceModel {sideA = -1, sideB = -1 };
-        List<PieceModel> doublets = new List<PieceModel>();
+    #endregion
 
-        for (int i = 0; i < listPieces.Count; i++)
-        {
-            if (listPieces[i].sideA == listPieces[i].sideB)
-            {
-                doublets.Add(listPieces[i]);
-            }
-        }
-
-        if (doublets.Count > 0)
-        {
-            if(doublets.Count == 1)
-            {
-                return doublets[0]; ;
-            }
-
-            for (int i = 0; i < doublets.Count; i++)
-            {
-                if(doublets[i].sideA > greatestDoublet.sideA)
-                {
-                    greatestDoublet = doublets[i];
-                }
-            }
-        }
-
-        return greatestDoublet;
-    }
+    #region Opponent
 
     private void OpponentCheck(bool isFirstPlay)
     {
@@ -188,25 +177,7 @@ public class Dominoes : MonoBehaviour
         return false;
     }
 
-
-
-    private void BuyPieces(List<PieceModel> piecesInHand, GameObject piecePrefab, RectTransform handContent, bool isOpponentHand)
-    {
-        if (piecesInGame.Count > 0)
-        {
-            int index = Random.Range(0, piecesInGame.Count - 1);
-            PieceModel newPiece = piecesInGame[index];
-            piecesInHand.Add(newPiece);
-            AddPieceToCanvas(newPiece, piecePrefab, handContent, isOpponentHand);
-            piecesInGame.RemoveAt(index);
-        }
-        else
-        {
-            print("Game Over, Acabou as peças!");
-            gameOver = true;
-        }
-    }
-
+    
     private void OppnentPlay(float rot, PieceModel pieceModel, bool isLeft)
     {
         pieceSelected = pieceModel;
@@ -227,6 +198,14 @@ public class Dominoes : MonoBehaviour
         PlayerTurn(true);
     }
 
+    #endregion
+
+    #region Player
+
+    /// <summary>
+    /// Configura a jogada do Humano para sua vez (interagivel) ou não.
+    /// </summary>
+    /// <param name="isTurn"></param>
     private void PlayerTurn(bool isTurn)
     {
         PieceCheck();
@@ -246,13 +225,12 @@ public class Dominoes : MonoBehaviour
             }
         }
     }
-
-    public void Buy()
-    {
-        BuyPieces(piecesInPlayerHand, piece, playerHand, false);
-        PlayerTurn(true);
-    }
-
+       
+    /// <summary>
+    /// Seleciona a peça possivel para a jogada.
+    /// Chamado por Botao
+    /// </summary>
+    /// <param name="piece"></param>
     private void PieceClick(PieceModel piece)
     {
         if(pieceSelected != null)
@@ -335,21 +313,25 @@ public class Dominoes : MonoBehaviour
 
         if (childs > 1)
         {
-            leftPiece = CheckPossiblePlay(
-                new PieceModel { 
-                    sideA = piecesInGame[0].GetComponent<PieceValue>().sideA, 
-                    sideB = piecesInGame[0].GetComponent<PieceValue>().sideB },
-                new PieceModel { 
-                    sideA = piecesInGame[1].GetComponent<PieceValue>().sideA, 
-                    sideB = piecesInGame[1].GetComponent<PieceValue>().sideB });
+            int GetSideAOfPieceInGame(int index, bool invertOrder = false)
+            {
+                var ix = (invertOrder) ? (piecesInGame.Count - index) : index;
+                return piecesInGame[ix].GetComponent<PieceValue>().sideA;
+            }
+            int GetSideBOfPieceInGame(int index, bool invertOrder = false)
+            {
+                var ix = (invertOrder) ? (piecesInGame.Count - index) : index;
+                return piecesInGame[ix].GetComponent<PieceValue>().sideB;
+            }
 
-            rightPiece = CheckPossiblePlay(
-                new PieceModel { 
-                    sideA = piecesInGame[piecesInGame.Count - 1].GetComponent<PieceValue>().sideA, 
-                    sideB = piecesInGame[piecesInGame.Count - 1].GetComponent<PieceValue>().sideB },
-                new PieceModel { 
-                    sideA = piecesInGame[piecesInGame.Count - 2].GetComponent<PieceValue>().sideA, 
-                    sideB = piecesInGame[piecesInGame.Count - 2].GetComponent<PieceValue>().sideB });
+            var firstPeace = new PieceModel(GetSideAOfPieceInGame(0), GetSideBOfPieceInGame(0));
+            var secoundPiece = new PieceModel(GetSideAOfPieceInGame(1), GetSideBOfPieceInGame(1));
+            leftPiece = CheckPossiblePlay(firstPeace, secoundPiece);
+
+            var invertOrder = true;
+            var last = new PieceModel(GetSideAOfPieceInGame(0, invertOrder), GetSideBOfPieceInGame(0, invertOrder));
+            var penultimate = new PieceModel(GetSideAOfPieceInGame(1, invertOrder), GetSideBOfPieceInGame(1, invertOrder));            
+            rightPiece = CheckPossiblePlay(last, penultimate);
         }
 
         if(childs == 1)
@@ -360,20 +342,13 @@ public class Dominoes : MonoBehaviour
 
         viewPiecesInGame = piecesInGame;
     }
-
-    private int CheckPossiblePlay(PieceModel pieceA, PieceModel pieceB)
-    {
-        int pieceValue = pieceA.sideA;
-
-        if(pieceA.sideA == pieceB.sideA || pieceA.sideA == pieceB.sideB)
-        {
-            pieceValue = pieceA.sideB;
-        }
-
-        return pieceValue;
-    }
-
-    //É chamado no button na cena
+    
+    /// <summary>
+    /// Realiza a jogada ao selecionar a peça e o lado do tabuleiro disponivel.
+    /// Chamado por botão
+    /// </summary>
+    /// <param name="isLeft"></param>
+    /// <param name="valueRotation"></param>
     public void Play(bool isLeft, float valueRotation)
     {
         pieceSelected.pieceObject.transform.SetParent(table);
@@ -396,6 +371,41 @@ public class Dominoes : MonoBehaviour
         piecesInPlayerHand.Remove(pieceSelected);
         PlayerTurn(false);
         OpponentCheck(false);
+    }
+
+    #endregion
+
+    #region Game Methods
+    private PieceModel CheckGreatestDoubletes(List<PieceModel> listPieces)
+    {
+        PieceModel greatestDoublet = new PieceModel { sideA = -1, sideB = -1 };
+        List<PieceModel> doublets = new List<PieceModel>();
+
+        for (int i = 0; i < listPieces.Count; i++)
+        {
+            if (listPieces[i].sideA == listPieces[i].sideB)
+            {
+                doublets.Add(listPieces[i]);
+            }
+        }
+
+        if (doublets.Count > 0)
+        {
+            if (doublets.Count == 1)
+            {
+                return doublets[0]; ;
+            }
+
+            for (int i = 0; i < doublets.Count; i++)
+            {
+                if (doublets[i].sideA > greatestDoublet.sideA)
+                {
+                    greatestDoublet = doublets[i];
+                }
+            }
+        }
+
+        return greatestDoublet;
     }
 
     public bool IsTerminal()
@@ -429,41 +439,33 @@ public class Dominoes : MonoBehaviour
         }
     }
 
-    #region Fluxo Minimax
-
-    private void Minimax()
+    private int CheckPossiblePlay(PieceModel pieceA, PieceModel pieceB)
     {
+        int pieceValue = pieceA.sideA;
 
+        if (pieceA.sideA == pieceB.sideA || pieceA.sideA == pieceB.sideB)
+        {
+            pieceValue = pieceA.sideB;
+        }
+
+        return pieceValue;
     }
-
-    private void Minimazing()
+    
+    private void BuyPieces(List<PieceModel> piecesInHand, GameObject piecePrefab, RectTransform handContent, bool isOpponentHand)
     {
-
-    }
-
-    private void Naxmazing()
-    {
-
-    }
-
-    /// <summary>
-    /// Função linear com pesos: F= w.A + w.B ...
-    /// chamada para dar nota para estados. Probabilidade de vencer a partir deste estado.
-    /// </summary>
-    /// <returns></returns>
-    private int FuncaoAvaliacao()
-    {
-
-        return 10;
-    }
-
-    /// <summary>
-    /// Dá valor numérico aos estados terminais. 
-    /// </summary>
-    /// <returns></returns>
-    private int FuncaoUtilidade()
-    {
-        return 10;
+        if (piecesInGame.Count > 0)
+        {
+            int index = Random.Range(0, piecesInGame.Count - 1);
+            PieceModel newPiece = piecesInGame[index];
+            piecesInHand.Add(newPiece);
+            AddPieceToCanvas(newPiece, piecePrefab, handContent, isOpponentHand);
+            piecesInGame.RemoveAt(index);
+        }
+        else
+        {
+            print("Game Over, Acabou as peças!");
+            gameOver = true;
+        }
     }
 
     #endregion
