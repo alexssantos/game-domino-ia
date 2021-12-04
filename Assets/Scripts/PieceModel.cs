@@ -17,6 +17,12 @@ public class PieceModel
         this.sideB = sideB;
     }
 
+    public PieceModel(PieceValue pieceValue)
+    {
+        this.sideA = pieceValue.sideA;
+        this.sideB = pieceValue.sideB;
+    }
+
     public Sprite sprite;
     public int sideA;
     public int sideB;

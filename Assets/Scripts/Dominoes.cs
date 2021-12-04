@@ -22,20 +22,21 @@ public class Dominoes : MonoBehaviour
     public Button btnLeft;
     public Button btnRight;
 
+    public Text txtPiecesLeftToBuy;
+    public List<Transform> viewPiecesInGame = new List<Transform>();
+    private PieceModel pieceSelected;
+
     private List<PieceModel> piecesInGame = new List<PieceModel>();
     private List<PieceModel> piecesInPlayerHand = new List<PieceModel>();
     private List<PieceModel> piecesInOpponentHand = new List<PieceModel>();
+    private List<PieceModel> piecesOnTable= new List<PieceModel>();
 
-    private PieceModel pieceSelected;
     private int leftPiece = -1;
     private int rightPiece = -1;
-
-    public List<Transform> viewPiecesInGame = new List<Transform>();
 
     private bool gameOver = false;
     private bool startGame = false;
 
-    public Text txtPiecesLeftToBuy;
 
     private Computer _opponentIA;
 
@@ -60,7 +61,7 @@ public class Dominoes : MonoBehaviour
     public void Buy()
     {
         BuyPieces(piecesInPlayerHand, piece, playerHand, false);
-        PlayerTurn(true);
+        SetPlayerTurn(true);
     }
 
 
@@ -121,20 +122,20 @@ public class Dominoes : MonoBehaviour
 
         if(greatestDoubletOpponent.sideA > greatestDoubletPlayer.sideA)
         {
-            PlayerTurn(false);
+            SetPlayerTurn(false);
             pieceSelected = greatestDoubletOpponent;
             OpponentCheck(true);
             return;
         }
 
-        PlayerTurn(true);
+        SetPlayerTurn(true);
     }
-
+    
     #endregion
 
-    #region Opponent
 
-    private void OpponentCheck(bool isFirstPlay)
+    #region Opponent
+    private void OpponentCheck(bool isFirstPlay = false)
     {
         //Thread.Sleep(2*1000); //Computador aguarda 2s para jogar
 
@@ -145,12 +146,17 @@ public class Dominoes : MonoBehaviour
         }
 
         //TODO: OBTER MOVIMENTO IA
-        var pieceToPlay = GetAllPossiblePiece(piecesInOpponentHand).FirstOrDefault();
-        var possiblePieces = GetAllPossiblePiece(piecesInOpponentHand);
-        //var pieceToPlay = _opponentIA.ObterMelhorJogada(possiblePieces);
+        var state = new GameState(
+            this.piecesInOpponentHand, 
+            this.piecesOnTable,
+            this.piecesInGame,
+            this.piecesInPlayerHand);
+        //var pieceToPlay = _opponentIA.ObterMelhorJogada(state);
+
+        var pieceToPlay = GetAllPossiblePiece(piecesInOpponentHand).FirstOrDefault();        
         if (pieceToPlay != default)
         {
-            var (rotaion, tableSide, pieaceMatch) = GetRotationAndTableSideForPieace(pieceToPlay);
+            var (rotaion, tableSide, _) = GetRotationAndTableSideForPieace(pieceToPlay);
             OppnentPlay(rotaion, pieceToPlay, tableSide);
             return;
         }
@@ -158,7 +164,7 @@ public class Dominoes : MonoBehaviour
         if (!gameOver)
         {
             BuyPieces(piecesInOpponentHand, hidePiece, opponentHand, true);
-            OpponentCheck(false);
+            OpponentCheck();
         }
     }
 
@@ -227,7 +233,8 @@ public class Dominoes : MonoBehaviour
 
         pieceSelected.pieceObject.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0, 0, rotation);
         piecesInOpponentHand.Remove(pieceSelected);
-        PlayerTurn(true);
+        piecesOnTable.Add(pieceSelected);
+        SetPlayerTurn(true);
     }
 
     #endregion
@@ -238,7 +245,7 @@ public class Dominoes : MonoBehaviour
     /// Configura a jogada do Humano para sua vez (interagivel) ou não.
     /// </summary>
     /// <param name="isTurn"></param>
-    private void PlayerTurn(bool isTurn)
+    private void SetPlayerTurn(bool isTurn)
     {
         PieceCheck();
 
@@ -343,33 +350,29 @@ public class Dominoes : MonoBehaviour
             piecesInGame.Add(table.GetChild(i));
         }
 
+        PieceValue GetPieceInGame(int index, bool invertOrder = false)
+        {
+            var ix = (invertOrder) ? (piecesInGame.Count - 1 - index) : index;
+            return piecesInGame[ix].GetComponent<PieceValue>();
+        }
+
         if (childs > 1)
         {
-            int GetSideAOfPieceInGame(int index, bool invertOrder = false)
-            {
-                var ix = (invertOrder) ? (piecesInGame.Count - 1 - index) : index;
-                return piecesInGame[ix].GetComponent<PieceValue>().sideA;
-            }
-            int GetSideBOfPieceInGame(int index, bool invertOrder = false)
-            {
-                var ix = (invertOrder) ? (piecesInGame.Count - 1 - index) : index;
-                return piecesInGame[ix].GetComponent<PieceValue>().sideB;
-            }
-
-            var firstPeace = new PieceModel(GetSideAOfPieceInGame(0), GetSideBOfPieceInGame(0));
-            var secoundPiece = new PieceModel(GetSideAOfPieceInGame(1), GetSideBOfPieceInGame(1));
+            var firstPeace = new PieceModel(GetPieceInGame(0));
+            var secoundPiece = new PieceModel(GetPieceInGame(1));
             leftPiece = CheckPossiblePlay(firstPeace, secoundPiece);
 
             var invertOrder = true;
-            var last = new PieceModel(GetSideAOfPieceInGame(0, invertOrder), GetSideBOfPieceInGame(0, invertOrder));
-            var penultimate = new PieceModel(GetSideAOfPieceInGame(1, invertOrder), GetSideBOfPieceInGame(1, invertOrder));            
+            var last = new PieceModel(GetPieceInGame(0, invertOrder));
+            var penultimate = new PieceModel(GetPieceInGame(1, invertOrder));            
             rightPiece = CheckPossiblePlay(last, penultimate);
         }
 
         if(childs == 1)
         {
-            leftPiece = piecesInGame[0].GetComponent<PieceValue>().sideA;
-            rightPiece = piecesInGame[0].GetComponent<PieceValue>().sideB;
+            var firstPeace = new PieceModel(GetPieceInGame(0));
+            leftPiece = firstPeace.sideA;
+            rightPiece = firstPeace.sideB;
         }
 
         viewPiecesInGame = piecesInGame;
@@ -395,14 +398,18 @@ public class Dominoes : MonoBehaviour
 
         pieceSelected.pieceObject.GetComponent<RectTransform>().localScale = new Vector2(1, 1);
         pieceSelected.pieceObject.GetComponent<RectTransform>().localRotation = Quaternion.Euler(0, 0, valueRotation);
+        
         btnLeft.onClick.RemoveAllListeners();
         btnRight.onClick.RemoveAllListeners();
         btnLeft.gameObject.SetActive(false);
         btnRight.gameObject.SetActive(false);
+        
         pieceSelected.pieceObject.GetComponent<Button>().onClick.RemoveAllListeners();
         piecesInPlayerHand.Remove(pieceSelected);
-        PlayerTurn(false);
-        OpponentCheck(false);
+        piecesOnTable.Add(pieceSelected);
+
+        SetPlayerTurn(false);
+        OpponentCheck();
     }
 
     #endregion
@@ -444,7 +451,7 @@ public class Dominoes : MonoBehaviour
     {
         var playerWinns = piecesInPlayerHand.Count == 0;
         var computerWinns = piecesInOpponentHand.Count == 0;
-        var drawGame = gameOver == true && piecesInOpponentHand.Count > 0 && piecesInPlayerHand.Count > 0;
+        var drawGame = gameOver && piecesInOpponentHand.Count > 0 && piecesInPlayerHand.Count > 0;
         return playerWinns || computerWinns || drawGame;
     }
 

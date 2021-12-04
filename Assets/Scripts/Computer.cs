@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Assets.Scripts
 {
@@ -19,14 +15,16 @@ namespace Assets.Scripts
         /// Recebe o Estado do jogo no turno atual: dados de peças na mão e na mesa.
         /// </summary>
         /// <returns>Retorna a melhor peça a ser jogada</returns>
-        public PieceModel ObterMelhorJogada(List<PieceModel> pecasPossiveis, List<PieceModel> pecasNaMesa, int qtddAdversario, int qtddComprar)
+        public PieceModel ObterMelhorJogada(GameState gameState)
         {
             //Peças na minha mão
             //Peças no tabuleiro
             //Qtdd de peças para comprar
             //Qtdd de peças do Adversario
 
-            for (int i = 0; i < pecasPossiveis.Count; i++)
+            //var pecasPossiveis = gameState.PecasDoJogador
+
+            for (int i = 0; i < gameState.PecasDoJogador.Count; i++)
             {
 
             }
@@ -34,7 +32,7 @@ namespace Assets.Scripts
             return null;
         }
 
-        private void Minimax()
+        private void Minimax(int depth, GameState state, bool maximizingPlayer)
         {
 
         }
@@ -44,18 +42,32 @@ namespace Assets.Scripts
 
         }
 
-        private void Naxmazing()
+        private void Maxmazing()
         {
 
         }
 
         /// <summary>
-        /// Função linear com pesos: F= w.A + w.B ...
-        /// chamada para dar nota para estados. Probabilidade de vencer a partir deste estado.
+        /// Realiza a jogada e obtem o proximo estado ao 
+        /// </summary>
+        //public RealizarJogada()
+        //{
+
+        //}
+
+
+        /// <summary>
+        /// Função linear com pesos: Fav(s) = w.A(s) + w.B(s) ...
+        /// Chamada para dar nota para estados. Probabilidade de vencer a partir deste estado.
+        /// PONTOS:
+        ///     1. A(s) = Qtdd de peças possiveis.
+        ///         - Nao deixar o oponente jogar (inverso, ponto negativo)
+        ///     2. B(s) = Qtdd de peças na mão (apos comprar).
         /// </summary>
         /// <returns></returns>
-        private int FuncaoAvaliacao()
+        private int FuncaoAvaliacao(GameState gameState)
         {
+
 
             return 10;
         }
@@ -64,9 +76,33 @@ namespace Assets.Scripts
         /// Dá valor numérico aos estados terminais. 
         /// </summary>
         /// <returns></returns>
-        private int FuncaoUtilidade()
+        private int Utilidade()
         {
             return 10;
         }
+
+        private bool EhTerminal(GameState gameState)
+        {
+            var playerWinns = gameState.PecasDoJogador.Count == 0;
+            var computerWinns = gameState.PecasAdversario.Count == 0;
+            var drawGame = gameState.JogoTerminado && gameState.PecasDoJogador.Count > 0 && gameState.PecasAdversario.Count > 0;
+            return playerWinns || computerWinns || drawGame;
+        }
+
+        #region Acoes
+
+
+
+        ///// <summary>
+        ///// retira uma peça aleatoria da compra e retorna.
+        ///// </summary>
+        //public PieceModel ComprarPeca(GameState gameState)
+        //{
+        //    int index = new Random().Next(0, gameState.PecasNaMesa.Count - 1);
+        //    PieceModel newPiece = piecesInGame[index];
+        //    piecesInGame.RemoveAt(index);
+        //}
+
+        #endregion
     }
 }
