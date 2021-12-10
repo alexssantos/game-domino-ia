@@ -17,40 +17,77 @@ namespace Assets.Scripts
         /// </summary>
         /// <returns>Retorna a melhor peça a ser jogada</returns>
         public PieceModel ObterMelhorJogada(GameState gameState, bool maximizingPlayer=true )
-        {
-            //Peças na minha mão
-            //Peças no tabuleiro
-            //Qtdd de peças para comprar
-            //Qtdd de peças do Adversario
-
-            //var pecasPossiveis = gameState.PecasDoJogador
-
-            for (int i = 0; i < gameState.PecasDoJogador.Count; i++)
-            {
-
-
-                var jogada = Minimax(_depthDefault, gameState, maximizingPlayer);
-            }
-
-            return null;
+        {            
+            var jogada = Minimax(_depthDefault, gameState, maximizingPlayer);
+            return jogada;
         }
 
+        /// <summary>
+        /// Retorna a melhor jogada a partir do algoritmo de minimax.
+        /// </summary>
+        /// <param name="depth"></param>
+        /// <param name="state"></param>
+        /// <param name="maximizingPlayer"></param>
+        /// <returns></returns>
         private PieceModel Minimax(int depth, GameState state, bool maximizingPlayer)
         {
             if (maximizingPlayer)
-                return Maxmazing(depth, state);
+                return Maxmazing(depth, state).Item1;
             else
-                return Minimazing(depth, state);
+                return Minimazing(depth, state).Item1;
         }
 
-        private PieceModel Minimazing(int depth, GameState state)
+        private (PieceModel, int) Minimazing(int depth, GameState state)
         {
-            
+            var menorPontuacao = int.MaxValue;
+            var pecaRetorno = default(PieceModel);
+
+            if (state.EhTerminal())
+                return (pecaRetorno, -Utilidade());
+
+            if (depth == 0)
+                return (pecaRetorno, -AvaliarEstado(state));
+
+            var pecasPossiveis = state.ObterPecasPossiveis();
+            foreach (var pecaIx in pecasPossiveis)
+            {
+                var stateProxTurno = GameState.RealizarJogada(state, pecaIx);
+                var (_, pontos) = Maxmazing(depth - 1, stateProxTurno);
+                if (pontos < menorPontuacao)
+                {
+                    menorPontuacao = pontos;
+                    pecaRetorno = pecaIx;
+                }
+            }
+
+            return (pecaRetorno, menorPontuacao);
         }
 
-        private PieceModel Maxmazing(int depth, GameState state)
+        private (PieceModel, int) Maxmazing(int depth, GameState state)
         {
+            var maiorPontuacao = int.MinValue;
+            var pecaRetorno = default(PieceModel);
 
+            //estou em um estado terminal?
+            if (state.EhTerminal())
+                return (pecaRetorno, Utilidade());
+
+            if (depth == 0)
+                return (pecaRetorno, AvaliarEstado(state));
+
+            var pecasPossiveis = state.ObterPecasPossiveis();
+            foreach (var pecaIx in pecasPossiveis)
+            {
+                var stateProxTurno = GameState.RealizarJogada(state, pecaIx);
+                var (_, pontos) = Minimazing(depth - 1, stateProxTurno);
+                if (pontos > maiorPontuacao)
+                {
+                    maiorPontuacao = pontos;
+                    pecaRetorno = pecaIx;
+                }
+            }
+
+            return (pecaRetorno, maiorPontuacao);
         }
         
 
@@ -60,13 +97,14 @@ namespace Assets.Scripts
         /// PONTOS:
         ///     1. A(s) = Qtdd de peças possiveis.
         ///         - Nao deixar o oponente jogar (inverso, ponto negativo)
-        ///     2. B(s) = Qtdd de peças na mão (apos comprar).
+        ///     2. B(s) = Qtdd de peças na mão (apos comprar).        ///  
         /// </summary>
-        /// <returns></returns>
-        private int FuncaoAvaliacao(GameState gameState)
+        /// <returns>
+        /// Retorna pontuação do estado atual do jogo.
+        /// Nunca retorna uma pontuacao maior que a Utilidade()
+        /// </returns>
+        private int AvaliarEstado(GameState gameState)
         {
-
-
             return 10;
         }
 
