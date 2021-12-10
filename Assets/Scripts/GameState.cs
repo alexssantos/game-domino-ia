@@ -50,27 +50,27 @@ namespace Assets.Scripts
             return PecasDoJogador.Where(peca => EhPossivelJogar(peca)).ToList();
         }
 
-        public bool EhTerminal(GameState gameState)
+        public bool EhTerminal()
         {
-            var playerWinns = gameState.PecasDoJogador.Count == 0;
-            var computerWinns = gameState.PecasAdversario.Count == 0;
-            var drawGame = gameState.JogoTerminado && gameState.PecasDoJogador.Count > 0 && gameState.PecasAdversario.Count > 0;
+            var playerWinns = PecasDoJogador.Count == 0;
+            var computerWinns = PecasAdversario.Count == 0;
+            var drawGame = JogoTerminado && PecasDoJogador.Count > 0 && PecasAdversario.Count > 0;
             return playerWinns || computerWinns || drawGame;
         }
 
         /// <summary>
         /// retira uma peça aleatoria da compra e a retorna.
         /// </summary>
-        public PieceModel ComprarPeca(GameState gameState)
+        public PieceModel ComprarPeca()
         {
-            if (!gameState.PecasParaComprar.Any())
+            if (!PecasParaComprar.Any())
                 return default;
 
-            int index = new Random().Next(0, gameState.PecasNaMesa.Count - 1);
-            PieceModel newPiece = gameState.PecasParaComprar[index];
+            int index = new Random().Next(0, PecasNaMesa.Count - 1);
+            PieceModel newPiece = PecasParaComprar[index];
             
-            gameState.PecasParaComprar.RemoveAt(index);
-            gameState.PecasDoJogador.Add(newPiece);
+            PecasParaComprar.RemoveAt(index);
+            PecasDoJogador.Add(newPiece);
             return newPiece;
         }
             
@@ -79,7 +79,7 @@ namespace Assets.Scripts
         {
             while (!EhPossivelJogar(peca))
             {
-                var nova = ComprarPeca(this);
+                var nova = ComprarPeca();
                 if (peca != default)                
                     peca = nova;
                 else
@@ -114,8 +114,23 @@ namespace Assets.Scripts
                 return gameState;
 
             gameState.PecasDoJogador.Remove(peca);
+
+            if (gameState.EhFimDeJogo())
+            {
+                gameState.JogoTerminado = true;
+                return gameState;
+            }        
+
             gameState.InverterTurno();
             return gameState;
+        }
+
+        public bool EhFimDeJogo()
+        {
+            if (PecasDoJogador.Count == 0)
+                return true;
+
+            return false;
         }
     }
 }
