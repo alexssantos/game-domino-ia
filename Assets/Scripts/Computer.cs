@@ -5,6 +5,7 @@ namespace Assets.Scripts
     public class Computer
     {
         private string _algoritmo { get; set; }
+        private const int _depthDefault = 3;
 
         public Computer(string algoritmo = "MINIMAX")
         {
@@ -15,7 +16,7 @@ namespace Assets.Scripts
         /// Recebe o Estado do jogo no turno atual: dados de peças na mão e na mesa.
         /// </summary>
         /// <returns>Retorna a melhor peça a ser jogada</returns>
-        public PieceModel ObterMelhorJogada(GameState gameState)
+        public PieceModel ObterMelhorJogada(GameState gameState, bool maximizingPlayer=true )
         {
             //Peças na minha mão
             //Peças no tabuleiro
@@ -27,34 +28,31 @@ namespace Assets.Scripts
             for (int i = 0; i < gameState.PecasDoJogador.Count; i++)
             {
 
+
+                var jogada = Minimax(_depthDefault, gameState, maximizingPlayer);
             }
 
             return null;
         }
 
-        private void Minimax(int depth, GameState state, bool maximizingPlayer)
+        private PieceModel Minimax(int depth, GameState state, bool maximizingPlayer)
+        {
+            if (maximizingPlayer)
+                return Maxmazing(depth, state);
+            else
+                return Minimazing(depth, state);
+        }
+
+        private PieceModel Minimazing(int depth, GameState state)
+        {
+            
+        }
+
+        private PieceModel Maxmazing(int depth, GameState state)
         {
 
         }
-
-        private void Minimazing()
-        {
-
-        }
-
-        private void Maxmazing()
-        {
-
-        }
-
-        /// <summary>
-        /// Realiza a jogada e obtem o proximo estado ao 
-        /// </summary>
-        //public RealizarJogada()
-        //{
-
-        //}
-
+        
 
         /// <summary>
         /// Função linear com pesos: Fav(s) = w.A(s) + w.B(s) ...
@@ -73,36 +71,12 @@ namespace Assets.Scripts
         }
 
         /// <summary>
-        /// Dá valor numérico aos estados terminais. 
+        /// Pontuacao maxima aos estados terminais. 
         /// </summary>
         /// <returns></returns>
         private int Utilidade()
         {
-            return 10;
+            return 100;
         }
-
-        private bool EhTerminal(GameState gameState)
-        {
-            var playerWinns = gameState.PecasDoJogador.Count == 0;
-            var computerWinns = gameState.PecasAdversario.Count == 0;
-            var drawGame = gameState.JogoTerminado && gameState.PecasDoJogador.Count > 0 && gameState.PecasAdversario.Count > 0;
-            return playerWinns || computerWinns || drawGame;
-        }
-
-        #region Acoes
-
-
-
-        ///// <summary>
-        ///// retira uma peça aleatoria da compra e retorna.
-        ///// </summary>
-        //public PieceModel ComprarPeca(GameState gameState)
-        //{
-        //    int index = new Random().Next(0, gameState.PecasNaMesa.Count - 1);
-        //    PieceModel newPiece = piecesInGame[index];
-        //    piecesInGame.RemoveAt(index);
-        //}
-
-        #endregion
     }
 }
