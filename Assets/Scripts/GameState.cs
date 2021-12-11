@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Assets.Scripts.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace Assets.Scripts
 {
+    [Serializable]
     public class GameState
     {
         public int Pontos { get; set; }
@@ -13,20 +15,28 @@ namespace Assets.Scripts
         public int PontaEsquerda { get; set; }
         public int PontaDireita { get; set; }
 
-        public List<PieceModel> PecasDoJogador { get; set; }
-        public List<PieceModel> PecasNaMesa { get; set; }
-        public List<PieceModel> PecasParaComprar { get; set; }
-        public List<PieceModel> PecasAdversario { get; set; }
+        public List<PiecePairValue> PecasDoJogador { get; set; }
+        public List<PiecePairValue> PecasNaMesa { get; set; }
+        public List<PiecePairValue> PecasParaComprar { get; set; }
+        public List<PiecePairValue> PecasAdversario { get; set; }
 
 
-        public GameState(List<PieceModel> pecasDoJogador, List<PieceModel> pecasNaMesa, List<PieceModel> pecasParaComprar, List<PieceModel> pecasAdversario)
+        public GameState(
+            List<PieceModel> pecasDoJogador, 
+            List<PieceModel> pecasNaMesa,
+            List<PieceModel> pecasParaComprar, 
+            List<PieceModel> pecasAdversario, 
+            int pontaEsquerda, 
+            int pontaDireita)
         {
-            this.PecasDoJogador = pecasDoJogador;
-            this.PecasNaMesa = pecasNaMesa;
-            this.PecasParaComprar = pecasParaComprar;
-            this.PecasAdversario = pecasAdversario;
+            this.PecasDoJogador = pecasDoJogador.Select(p => new PiecePairValue(p)).ToList();
+            this.PecasNaMesa = pecasNaMesa.Select(p => new PiecePairValue(p)).ToList();
+            this.PecasParaComprar = pecasParaComprar.Select(p => new PiecePairValue(p)).ToList();
+            this.PecasAdversario = pecasAdversario.Select(p => new PiecePairValue(p)).ToList();
+            PontaEsquerda = pontaEsquerda;
+            PontaDireita = pontaDireita;
         }
-              
+
         public void InverterTurno()
         {
             var aux = PecasDoJogador;
@@ -34,7 +44,7 @@ namespace Assets.Scripts
             PecasAdversario = aux; 
         }
 
-        public bool EhPossivelJogar(PieceModel peca)
+        public bool EhPossivelJogar(PiecePairValue peca)
         {
             if (peca == null) return false;
 
@@ -45,7 +55,7 @@ namespace Assets.Scripts
             return false;
         }
 
-        public List<PieceModel> ObterPecasPossiveis()
+        public List<PiecePairValue> ObterPecasPossiveis()
         {
             return PecasDoJogador.Where(peca => EhPossivelJogar(peca)).ToList();
         }
@@ -61,13 +71,13 @@ namespace Assets.Scripts
         /// <summary>
         /// retira uma peça aleatoria da compra e a retorna.
         /// </summary>
-        public PieceModel ComprarPeca()
+        public PiecePairValue ComprarPeca()
         {
             if (!PecasParaComprar.Any())
                 return default;
 
             int index = new Random().Next(0, PecasNaMesa.Count - 1);
-            PieceModel newPiece = PecasParaComprar[index];
+            PiecePairValue newPiece = PecasParaComprar[index];
             
             PecasParaComprar.RemoveAt(index);
             PecasDoJogador.Add(newPiece);
@@ -75,7 +85,7 @@ namespace Assets.Scripts
         }
             
 
-        private bool AdicionarPecaNoTabuleiro(PieceModel peca)
+        private bool AdicionarPecaNoTabuleiro(PiecePairValue peca)
         {
             while (!EhPossivelJogar(peca))
             {
@@ -108,21 +118,22 @@ namespace Assets.Scripts
         /// </summary>
         /// <param name="gameState"></param>
         /// <returns>Estado do prox turno com jogador do turno já alternado.</returns>
-        public static GameState RealizarJogada(GameState gameState, PieceModel peca)
+        public static GameState RealizarJogada(GameState gameState, PiecePairValue peca)
         {
-            if(!gameState.AdicionarPecaNoTabuleiro(peca))
-                return gameState;
+            var state = gameState.Clone();
+            if (!state.AdicionarPecaNoTabuleiro(peca))
+                return state;
 
-            gameState.PecasDoJogador.Remove(peca);
+            state.PecasDoJogador.Remove(peca);
 
-            if (gameState.EhFimDeJogo())
+            if (state.EhFimDeJogo())
             {
-                gameState.JogoTerminado = true;
-                return gameState;
-            }        
+                state.JogoTerminado = true;
+                return state;
+            }
 
-            gameState.InverterTurno();
-            return gameState;
+            state.InverterTurno();
+            return state;
         }
 
         public bool EhFimDeJogo()
@@ -131,6 +142,19 @@ namespace Assets.Scripts
                 return true;
 
             return false;
+        }
+    }
+
+    [Serializable]
+    public class PiecePairValue
+    {
+        public int sideA { get; private set; }        
+        public int sideB { get; private set; }
+
+        public PiecePairValue(PieceModel model)
+        {
+            this.sideA = model.sideA;
+            this.sideB = model.sideB;
         }
     }
 }

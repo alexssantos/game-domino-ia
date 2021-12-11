@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Assets.Scripts
 {
@@ -18,8 +19,12 @@ namespace Assets.Scripts
         /// <returns>Retorna a melhor peça a ser jogada</returns>
         public PieceModel ObterMelhorJogada(GameState gameState, bool maximizingPlayer=true )
         {            
-            var jogada = Minimax(_depthDefault, gameState, maximizingPlayer);
-            return jogada;
+            var parValores = Minimax(_depthDefault, gameState, maximizingPlayer);
+
+            if (parValores != default)
+                return new PieceModel(parValores.sideA, parValores.sideB);
+            else
+                return default;
         }
 
         /// <summary>
@@ -29,7 +34,7 @@ namespace Assets.Scripts
         /// <param name="state"></param>
         /// <param name="maximizingPlayer"></param>
         /// <returns></returns>
-        private PieceModel Minimax(int depth, GameState state, bool maximizingPlayer)
+        private PiecePairValue Minimax(int depth, GameState state, bool maximizingPlayer)
         {
             if (maximizingPlayer)
                 return Maxmazing(depth, state).Item1;
@@ -37,10 +42,10 @@ namespace Assets.Scripts
                 return Minimazing(depth, state).Item1;
         }
 
-        private (PieceModel, int) Minimazing(int depth, GameState state)
+        private (PiecePairValue, int) Minimazing(int depth, GameState state)
         {
             var menorPontuacao = int.MaxValue;
-            var pecaRetorno = default(PieceModel);
+            var pecaRetorno = default(PiecePairValue);
 
             if (state.EhTerminal())
                 return (pecaRetorno, -Utilidade());
@@ -63,10 +68,10 @@ namespace Assets.Scripts
             return (pecaRetorno, menorPontuacao);
         }
 
-        private (PieceModel, int) Maxmazing(int depth, GameState state)
+        private (PiecePairValue, int) Maxmazing(int depth, GameState state)
         {
             var maiorPontuacao = int.MinValue;
-            var pecaRetorno = default(PieceModel);
+            var pecaRetorno = default(PiecePairValue);
 
             //estou em um estado terminal?
             if (state.EhTerminal())
@@ -79,6 +84,10 @@ namespace Assets.Scripts
             foreach (var pecaIx in pecasPossiveis)
             {
                 var stateProxTurno = GameState.RealizarJogada(state, pecaIx);
+                
+                var igual = Object.ReferenceEquals(state, stateProxTurno);
+                var igual2 = state.Equals(stateProxTurno);
+                
                 var (_, pontos) = Minimazing(depth - 1, stateProxTurno);
                 if (pontos > maiorPontuacao)
                 {

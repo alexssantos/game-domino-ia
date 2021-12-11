@@ -1,11 +1,14 @@
 using Assets.Scripts;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class Dominoes : MonoBehaviour
 {
@@ -145,15 +148,50 @@ public class Dominoes : MonoBehaviour
             return;
         }
 
-        //TODO: OBTER MOVIMENTO IA
-        var state = new GameState(
-            this.piecesInOpponentHand, 
-            this.piecesOnTable,
-            this.piecesInGame,
-            this.piecesInPlayerHand);
-        //var pieceToPlay = _opponentIA.ObterMelhorJogada(state);
+        var possiblesToPlay = GetAllPossiblePiece(piecesInOpponentHand);
+        PieceModel pieceToPlay = default;
 
-        var pieceToPlay = GetAllPossiblePiece(piecesInOpponentHand).FirstOrDefault();        
+        if (possiblesToPlay.Count > 1)
+        {
+            //TODO: OBTER MOVIMENTO IA
+            var state = new GameState(
+                this.piecesInOpponentHand, 
+                this.piecesOnTable,
+                this.piecesInGame,
+                this.piecesInPlayerHand,
+                leftPiece,
+                rightPiece);
+
+            //start calculate
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            var bestPlay = _opponentIA.ObterMelhorJogada(state);
+            pieceToPlay = this.piecesInOpponentHand.Where(p => p.sideA == bestPlay.sideA && p.sideB == bestPlay.sideB)
+                                                    .FirstOrDefault();
+
+            stopWatch.Stop();
+
+            var ts = stopWatch.Elapsed;
+            print($"tempo gasto: {string.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds,ts.Milliseconds / 10)}");        
+            print($"total peças jogador: {state.PecasDoJogador.Count}");
+            print($"total peças oponete: {state.PecasAdversario.Count}");
+        }
+
+
+
+        if (pieceToPlay == default)
+        {
+            pieceToPlay = GetAllPossiblePiece(piecesInOpponentHand).FirstOrDefault();
+            print("RANDOM CHOICE");
+        }
+        else
+        {
+        }
+
+
+
+
         if (pieceToPlay != default)
         {
             var (rotaion, tableSide, _) = GetRotationAndTableSideForPieace(pieceToPlay);
