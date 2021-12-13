@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Assets.Scripts
@@ -7,6 +9,7 @@ namespace Assets.Scripts
     {
         private string _algoritmo { get; set; }
         private const int _depthDefault = 3;
+        private IDictionary<string, IDictionary> arvore;
 
         public Computer(string algoritmo = "MINIMAX")
         {
@@ -18,7 +21,7 @@ namespace Assets.Scripts
         /// </summary>
         /// <returns>Retorna a melhor peça a ser jogada</returns>
         public PieceModel ObterMelhorJogada(GameState gameState, bool maximizingPlayer=true )
-        {            
+        {   
             var parValores = Minimax(_depthDefault, gameState, maximizingPlayer);
 
             if (parValores != default)
@@ -36,15 +39,18 @@ namespace Assets.Scripts
         /// <returns></returns>
         private PiecePairValue Minimax(int depth, GameState state, bool maximizingPlayer)
         {
+            arvore = new Dictionary<string, IDictionary>();
+            arvore["root"] = new Dictionary<string, IDictionary>();
+
             if (maximizingPlayer)
-                return Maxmazing(depth, state).Item1;
+                return Maxmazing(depth, state, arvore["root"]).Item1;
             else
-                return Minimazing(depth, state).Item1;
+                return Minimazing(depth, state, arvore["root"]).Item1;
         }
 
-        private (PiecePairValue, int) Minimazing(int depth, GameState state)
+        private (PiecePairValue, double) Minimazing(int depth, GameState state, IDictionary arvore)
         {
-            var menorPontuacao = int.MaxValue;
+            var menorPontuacao = double.MaxValue;
             var pecaRetorno = default(PiecePairValue);
 
             if (state.EhTerminal())
@@ -53,24 +59,30 @@ namespace Assets.Scripts
             if (depth == 0)
                 return (pecaRetorno, -AvaliarEstado(state));
 
+
+
             var pecasPossiveis = state.ObterPecasPossiveis();
             foreach (var pecaIx in pecasPossiveis)
             {
+                var indexKey = $"{depth}-{pecaIx}";
+                arvore.Add(indexKey, new Dictionary<string, IDictionary>());
+
                 var stateProxTurno = GameState.RealizarJogada(state, pecaIx);
-                var (_, pontos) = Maxmazing(depth - 1, stateProxTurno);
+                var (_, pontos) = Maxmazing(depth - 1, stateProxTurno, (IDictionary)arvore[indexKey]);
                 if (pontos < menorPontuacao)
                 {
                     menorPontuacao = pontos;
                     pecaRetorno = pecaIx;
+                    //arvore[$"{indexKey}-pontos"] = pontos;
                 }
             }
 
             return (pecaRetorno, menorPontuacao);
         }
 
-        private (PiecePairValue, int) Maxmazing(int depth, GameState state)
+        private (PiecePairValue, double) Maxmazing(int depth, GameState state, IDictionary arvore)
         {
-            var maiorPontuacao = int.MinValue;
+            var maiorPontuacao = double.MinValue;
             var pecaRetorno = default(PiecePairValue);
 
             //estou em um estado terminal?
@@ -79,20 +91,20 @@ namespace Assets.Scripts
 
             if (depth == 0)
                 return (pecaRetorno, AvaliarEstado(state));
-
+            
             var pecasPossiveis = state.ObterPecasPossiveis();
             foreach (var pecaIx in pecasPossiveis)
             {
-                var stateProxTurno = GameState.RealizarJogada(state, pecaIx);
-                
-                var igual = Object.ReferenceEquals(state, stateProxTurno);
-                var igual2 = state.Equals(stateProxTurno);
-                
-                var (_, pontos) = Minimazing(depth - 1, stateProxTurno);
+                var indexKey = $"{depth}-{pecaIx}";
+                arvore.Add(indexKey, new Dictionary<string, IDictionary>());
+
+                var stateProxTurno = GameState.RealizarJogada(state, pecaIx);                              
+                var (_, pontos) = Minimazing(depth - 1, stateProxTurno, (IDictionary)arvore[indexKey]);
                 if (pontos > maiorPontuacao)
                 {
                     maiorPontuacao = pontos;
                     pecaRetorno = pecaIx;
+                    //arvore[$"{indexKey}-pontos"] = pontos;
                 }
             }
 
@@ -106,15 +118,50 @@ namespace Assets.Scripts
         /// PONTOS:
         ///     1. A(s) = Qtdd de peças possiveis.
         ///         - Nao deixar o oponente jogar (inverso, ponto negativo)
-        ///     2. B(s) = Qtdd de peças na mão (apos comprar).        ///  
+        ///     2. B(s) = Qtdd de peças na mão (apos comprar).
         /// </summary>
         /// <returns>
         /// Retorna pontuação do estado atual do jogo.
         /// Nunca retorna uma pontuacao maior que a Utilidade()
         /// </returns>
-        private int AvaliarEstado(GameState gameState)
+        private double AvaliarEstado(GameState gameState)
         {
-            return 10;
+            var max = Utilidade() * 0.8;
+            var pontos = 0.0;
+
+            pontos += 3* PontuacaoPorPecasPosiveis(gameState);
+            pontos += 2* PontuacaoPorPecasPosiveisOponente(gameState);
+            pontos += 1* PontuacaoPorQuantidadeDePecasNaMao(gameState);
+
+
+            return pontos > max ? max : pontos;
+        }
+
+        private double PontuacaoPorPecasPosiveis(GameState gameState)
+        {
+            var max = 20;
+            var pontos = gameState.ObterPecasPossiveis().Count * 2;
+            return pontos > max ? max : pontos;
+        }
+
+        private double PontuacaoPorPecasPosiveisOponente(GameState gameState)
+        {
+            var max = 20;
+            var pecasQtdd = gameState.ObterPecasPossiveisAdversario().Count;
+            if (pecasQtdd == 0)
+                return max;
+            
+            return (max/pecasQtdd);
+        }
+
+        private double PontuacaoPorQuantidadeDePecasNaMao(GameState gameState)
+        {
+            var max = 20;
+            var pecasQtdd = gameState.PecasDoJogador.Count;
+            if (pecasQtdd == 0)
+                return max;
+
+            return (max / pecasQtdd);
         }
 
         /// <summary>
@@ -123,7 +170,7 @@ namespace Assets.Scripts
         /// <returns></returns>
         private int Utilidade()
         {
-            return 100;
+            return 200;
         }
     }
 }

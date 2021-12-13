@@ -60,6 +60,11 @@ namespace Assets.Scripts
             return PecasDoJogador.Where(peca => EhPossivelJogar(peca)).ToList();
         }
 
+        public List<PiecePairValue> ObterPecasPossiveisAdversario()
+        {
+            return PecasAdversario.Where(peca => EhPossivelJogar(peca)).ToList();
+        }
+
         public bool EhTerminal()
         {
             var playerWinns = PecasDoJogador.Count == 0;
@@ -155,6 +160,11 @@ namespace Assets.Scripts
         {
             this.sideA = model.sideA;
             this.sideB = model.sideB;
+        }
+
+        public override string ToString()
+        {
+            return $"{sideA}-{sideB}"; 
         }
     }
 }
